@@ -40,6 +40,7 @@ import java.io.File
 @Composable
 fun MemoEditScreen(
     memoId: Long?,
+    initialDateMs: Long? = null,
     onBack: () -> Unit,
     onSaved: () -> Unit,
     viewModel: MemoEditViewModel = viewModel()
@@ -92,6 +93,7 @@ fun MemoEditScreen(
         if (memoId != null) {
             viewModel.loadMemo(memoId)
         } else {
+            if (initialDateMs != null) viewModel.setInitialDate(initialDateMs)
             if (AppModule.locationRepository.hasLocationPermission()) viewModel.fetchLocation()
             else locationPermLauncher.launch(arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
@@ -104,10 +106,20 @@ fun MemoEditScreen(
     val primaryColor = MaterialTheme.colorScheme.primary
     val placeholderAlpha = 0.35f
 
+    // Format the selected date for display in the top bar (new memo only)
+    val topBarTitle = when {
+        memoId != null -> "编辑笔记"
+        initialDateMs != null -> {
+            val sdf = java.text.SimpleDateFormat("M月d日", java.util.Locale.CHINESE)
+            "${sdf.format(java.util.Date(initialDateMs))}的笔记"
+        }
+        else -> "新建笔记"
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (memoId == null) "新建笔记" else "编辑笔记") },
+                title = { Text(topBarTitle) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.Close, "关闭") } },
                 actions = {
                     TextButton(

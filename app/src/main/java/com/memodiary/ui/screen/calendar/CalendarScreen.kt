@@ -32,7 +32,7 @@ private val WEEKDAY_HEADERS = listOf("一", "二", "三", "四", "五", "六", "
 @Composable
 fun CalendarScreen(
     onDayClick: (dateStartMs: Long) -> Unit,
-    onAddMemo: () -> Unit,
+    onAddMemo: (dateMs: Long) -> Unit,
     viewModel: CalendarViewModel = viewModel()
 ) {
     val yearMonth by viewModel.currentYearMonth.collectAsState()
@@ -81,7 +81,13 @@ fun CalendarScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onAddMemo,
+                // Use start-of-today within the displayed month as the memo date
+                onClick = {
+                    val dayMs = viewModel.dayStartMillis(
+                        minOf(LocalDate.now().dayOfMonth, yearMonth.lengthOfMonth())
+                    )
+                    onAddMemo(dayMs)
+                },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.CalendarToday, contentDescription = "新建笔记")

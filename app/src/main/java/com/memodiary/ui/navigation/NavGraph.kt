@@ -27,7 +27,7 @@ private const val ROUTE_CALENDAR_DAY      = "calendarDay/{dateMs}"
 private const val ROUTE_FOOTPRINT         = "footprintList"
 private const val ROUTE_FOOTPRINT_DETAIL  = "footprintDetail/{city}"
 private const val ROUTE_DETAIL            = "memoDetail/{memoId}"
-private const val ROUTE_EDIT              = "memoEdit/{memoId}"
+private const val ROUTE_EDIT              = "memoEdit/{memoId}?dateMs={dateMs}"
 
 private data class TabItem(val label: String, val icon: ImageVector, val route: String)
 
@@ -89,7 +89,7 @@ fun NavGraph() {
             composable(ROUTE_CALENDAR) {
                 CalendarScreen(
                     onDayClick = { dateMs -> navController.navigate("calendarDay/$dateMs") },
-                    onAddMemo  = { navController.navigate("memoEdit/new") }
+                    onAddMemo  = { dateMs -> navController.navigate("memoEdit/new?dateMs=$dateMs") }
                 )
             }
 
@@ -99,7 +99,7 @@ fun NavGraph() {
                     dayStartMs  = dateMs,
                     onBack      = { navController.popBackStack() },
                     onMemoClick = { id -> navController.navigate("memoDetail/$id") },
-                    onAddMemo   = { navController.navigate("memoEdit/new") }
+                    onAddMemo   = { navController.navigate("memoEdit/new?dateMs=$dateMs") }
                 )
             }
 
@@ -133,11 +133,23 @@ fun NavGraph() {
                 )
             }
 
-            composable(ROUTE_EDIT) { backStackEntry ->
+            composable(
+                route = ROUTE_EDIT,
+                arguments = listOf(
+                    androidx.navigation.navArgument("memoId") { defaultValue = "new" },
+                    androidx.navigation.navArgument("dateMs") {
+                        nullable = true
+                        defaultValue = null
+                        type = androidx.navigation.NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
                 val memoIdStr = backStackEntry.arguments?.getString("memoId")
                 val memoId = if (memoIdStr == "new") null else memoIdStr?.toLongOrNull()
+                val initialDateMs = backStackEntry.arguments?.getString("dateMs")?.toLongOrNull()
                 MemoEditScreen(
                     memoId = memoId,
+                    initialDateMs = initialDateMs,
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() }
                 )

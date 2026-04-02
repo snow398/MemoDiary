@@ -22,6 +22,9 @@ class MemoEditViewModel : ViewModel() {
 
     private val _existingMemo = MutableStateFlow<Memo?>(null)
 
+    /** Optional pre-set creation timestamp (from calendar date selection). */
+    private var initialDateMs: Long? = null
+
     private val _title = MutableStateFlow("")
     val title: StateFlow<String> = _title
 
@@ -65,6 +68,11 @@ class MemoEditViewModel : ViewModel() {
                 )
             }
         }
+    }
+
+    /** Called when the user opens a new memo from the Calendar for a specific date. */
+    fun setInitialDate(dateMs: Long) {
+        initialDateMs = dateMs
     }
 
     fun onTitleChange(value: String) { _title.value = value }
@@ -129,6 +137,21 @@ class MemoEditViewModel : ViewModel() {
             val loc = _locationInfo.value
             val manual = _manualAddress.value.trim()
 
+            // createdAt: existing memo keeps its original time; new memos use the calendar-selected
+            // date if provided (preserving the time-of-day as current time within that day), else now.
+            val createdAt = existing?.createdAt
+                ?: initialDateMs?.let { dayStart ->
+                    // dayStart is midnight of the selected day; add current time-of-day offset
+                    val todayStart = java.util.Calendar.getInstance().apply {
+                        set(java.util.Calendar.HOUR_OF_DAY, 0)
+                        set(java.util.Calendar.MINUTE, 0)
+                        set(java.util.Calendar.SECOND, 0)
+                        set(java.util.Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+                    dayStart + (now - todayStart).coerceAtLeast(0L)
+                }
+                ?: now
+
             // If geocoding succeeded use it; if user typed an address but never hit "解析" (or it
             // failed), fall back to local parsing so the address is never silently discarded.
             val resolvedLoc: com.memodiary.data.location.LocationInfo? = when {
@@ -141,7 +164,7 @@ class MemoEditViewModel : ViewModel() {
                 id = existing?.id ?: 0,
                 title = _title.value.trim(),
                 content = _content.value,
-                createdAt = existing?.createdAt ?: now,
+                createdAt = createdAt,
                 updatedAt = now,
                 // Only save lat/lon when there is a real GPS fix (non-zero coords)
                 latitude  = resolvedLoc?.latitude?.takeIf { it != 0.0 },
