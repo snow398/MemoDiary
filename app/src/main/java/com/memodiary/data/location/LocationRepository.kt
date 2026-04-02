@@ -49,12 +49,12 @@ class LocationRepository(private val context: Context) {
             if (last != null) return LocationInfo(last.latitude, last.longitude)
         }
 
-        // 2. FusedClient: request fresh location with timeout
+        // 2. FusedClient: request fresh location with timeout — HIGH_ACCURACY for better precision
         fusedClient?.let { client ->
             val fresh = withTimeoutOrNull(10_000) {
                 suspendCancellableCoroutine<android.location.Location?> { cont ->
                     val cts = CancellationTokenSource()
-                    client.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cts.token)
+                    client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.token)
                         .addOnSuccessListener { cont.resume(it) }
                         .addOnFailureListener { cont.resume(null) }
                     cont.invokeOnCancellation { cts.cancel() }
@@ -87,7 +87,6 @@ class LocationRepository(private val context: Context) {
         return withContext(Dispatchers.IO) {
             try {
                 if (!Geocoder.isPresent()) {
-                    // No geocoding backend: show raw coordinates as address
                     return@withContext location.copy(
                         address = "%.5f, %.5f".format(location.latitude, location.longitude)
                     )
@@ -97,11 +96,24 @@ class LocationRepository(private val context: Context) {
                 val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
                 if (!addresses.isNullOrEmpty()) {
                     val addr = addresses[0]
+                    val city     = addr.locality ?: addr.subAdminArea
+                    val district = addr.subLocality           // 区/county/borough
+                    val street   = addr.thoroughfare          // 街道/road
+                    // Full address: prefer system-provided line, fall back to compositing
+                    val fullAddress = addr.getAddressLine(0)
+                        ?: buildString {
+                            listOfNotNull(
+                                addr.countryName, addr.adminArea, city,
+                                district, street, addr.featureName
+                            ).joinTo(this, " ")
+                        }
                     location.copy(
-                        country = addr.countryName,
+                        country  = addr.countryName,
                         province = addr.adminArea,
-                        city = addr.locality ?: addr.subAdminArea,
-                        address = addr.getAddressLine(0)
+                        city     = city,
+                        district = district,
+                        street   = street,
+                        address  = fullAddress
                     )
                 } else {
                     location.copy(address = "%.5f, %.5f".format(location.latitude, location.longitude))
@@ -121,13 +133,25 @@ class LocationRepository(private val context: Context) {
                 val addresses = geocoder.getFromLocationName(addressStr, 1)
                 if (!addresses.isNullOrEmpty()) {
                     val addr = addresses[0]
+                    val city     = addr.locality ?: addr.subAdminArea
+                    val district = addr.subLocality
+                    val street   = addr.thoroughfare
+                    val fullAddress = addr.getAddressLine(0)
+                        ?: buildString {
+                            listOfNotNull(
+                                addr.countryName, addr.adminArea, city,
+                                district, street, addr.featureName
+                            ).joinTo(this, " ")
+                        }
                     LocationInfo(
                         latitude = addr.latitude,
                         longitude = addr.longitude,
-                        country = addr.countryName,
+                        country  = addr.countryName,
                         province = addr.adminArea,
-                        city = addr.locality ?: addr.subAdminArea,
-                        address = addr.getAddressLine(0)
+                        city     = city,
+                        district = district,
+                        street   = street,
+                        address  = fullAddress
                     )
                 } else {
                     null

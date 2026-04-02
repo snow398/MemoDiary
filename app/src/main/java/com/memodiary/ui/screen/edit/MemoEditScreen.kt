@@ -261,11 +261,24 @@ fun MemoEditScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         val displayAddr = locationInfo?.let { info ->
                             info.address
-                                ?: listOfNotNull(info.city, info.province).joinToString(", ").ifBlank { null }
-                                ?: "%.5f, %.5f".format(info.latitude, info.longitude)
+                                ?: buildString {
+                                    listOfNotNull(info.district, info.city, info.province, info.country)
+                                        .joinTo(this, " ")
+                                }.ifBlank { "%.5f, %.5f".format(info.latitude, info.longitude) }
                         } ?: ""
-                        Text(displayAddr,
-                            style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(displayAddr, style = MaterialTheme.typography.bodyMedium)
+                            // Show district line when it adds info beyond the address
+                            val districtLine = locationInfo?.let { info ->
+                                listOfNotNull(info.district, info.street).joinToString(" ").ifBlank { null }
+                            }
+                            if (!districtLine.isNullOrBlank() &&
+                                locationInfo?.address?.contains(districtLine) != true) {
+                                Text(districtLine,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))

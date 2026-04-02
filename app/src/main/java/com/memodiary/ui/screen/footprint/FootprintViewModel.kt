@@ -98,8 +98,7 @@ class FootprintViewModel : ViewModel() {
     }
 
     private fun parseAddressFallback(address: String?): Triple<String, String, String> {
-        val parsed = parseChineseAddress(address)
-        // In grouped list, if city is missing, use district as the lowest visible granularity.
+        val parsed = parseAddress(address)
         val cityOrDistrict = when {
             parsed.city != "未分类" -> parsed.city
             parsed.district != "未分类" -> parsed.district
@@ -108,34 +107,82 @@ class FootprintViewModel : ViewModel() {
         return Triple(parsed.country, parsed.province, cityOrDistrict)
     }
 
-    private fun parseChineseAddress(address: String?): ParsedAddress {
+    /** Universal address parser: tries CJK patterns first, then generic international patterns. */
+    private fun parseAddress(address: String?): ParsedAddress {
         if (address.isNullOrBlank()) {
             return ParsedAddress("未分类", "未分类", "未分类", "未分类")
         }
 
-        val text = normalizeAddressText(address)
-        val country = detectCountry(text)
+        val trimmed = address.trim()
 
+        // ── Detect language type ─────────────────────────────────────────
+        val hasChinese = trimmed.any { it.code in 0x4E00..0x9FFF }
+        val hasJapanese = trimmed.any { it.code in 0x3040..0x30FF }
+
+        return if (hasChinese) parseChineseAddress(trimmed)
+        else if (hasJapanese) parseJapaneseAddress(trimmed)
+        else parseLatinAddress(trimmed)
+    }
+
+    private fun parseChineseAddress(address: String): ParsedAddress {
+        val text = normalizeAddressText(address)
+        val country = detectChineseCountry(text)
         val province = extractProvince(text)
         val afterProvince = if (province == "未分类") text else text.substringAfter(province, text)
-
         val city = extractCity(afterProvince).ifBlank {
-            // Municipality often has province == city-level name
             if (province in MUNICIPALITIES) province else "未分类"
         }
-
         val district = extractDistrict(afterProvince.substringAfter(city, afterProvince)).ifBlank {
             extractDistrict(afterProvince)
         }
-
         val normalizedProvince = if (province == "未分类") inferProvinceByCity(city) else province
-
         return ParsedAddress(
             country = country,
             province = normalizedProvince,
             city = if (city.isBlank()) "未分类" else city,
             district = if (district.isBlank()) "未分类" else district
         )
+    }
+
+    /** Japanese address: e.g. "日本東京都新宿区西新宿" */
+    private fun parseJapaneseAddress(text: String): ParsedAddress {
+        val province = Regex("([\\p{IsHan}\\p{InHiragana}\\p{InKatakana}]+[都道府県])").find(text)?.groupValues?.get(1) ?: "未分类"
+        val city = Regex("([\\p{IsHan}\\p{InHiragana}\\p{InKatakana}]+[市区町村郡])").find(text)?.groupValues?.get(1) ?: "未分类"
+        return ParsedAddress(country = "日本", province = province, city = city, district = "未分类")
+    }
+
+    /** Latin-script address (English, French, Spanish, etc.)
+     *  Attempt to extract Country, State/Province, City from comma-delimited tokens (last = country). */
+    private fun parseLatinAddress(text: String): ParsedAddress {
+        val parts = text.split(",").map { it.trim() }.filter { it.isNotBlank() }
+        return when {
+            parts.size >= 3 -> ParsedAddress(
+                country  = parts.last().normalizeCountryName(),
+                province = parts[parts.size - 2],
+                city     = parts[parts.size - 3],
+                district = "未分类"
+            )
+            parts.size == 2 -> ParsedAddress(
+                country  = parts.last().normalizeCountryName(),
+                province = "未分类",
+                city     = parts.first(),
+                district = "未分类"
+            )
+            parts.size == 1 -> ParsedAddress(
+                country  = parts.first().normalizeCountryName().let {
+                    if (it == parts.first()) "未分类" else it  // if unchanged, not a country
+                },
+                province = "未分类",
+                city     = parts.first(),
+                district = "未分类"
+            )
+            else -> ParsedAddress("未分类", "未分类", "未分类", "未分类")
+        }
+    }
+
+    private fun String.normalizeCountryName(): String {
+        val lower = this.lowercase(Locale.getDefault()).trim()
+        return COUNTRY_NAME_MAP[lower] ?: this
     }
 
     private fun normalizeAddressText(raw: String): String {
@@ -149,13 +196,22 @@ class FootprintViewModel : ViewModel() {
             .lowercase(Locale.getDefault())
     }
 
-    private fun detectCountry(text: String): String {
+    private fun detectChineseCountry(text: String): String {
         return when {
             text.contains("中国") || text.contains("中华人民共和国") -> "中国"
             text.contains("日本") -> "日本"
             text.contains("美国") || text.contains("usa") || text.contains("unitedstates") -> "美国"
+            text.contains("韩国") || text.contains("korea") -> "韩国"
+            text.contains("英国") || text.contains("unitedkingdom") -> "英国"
+            text.contains("法国") || text.contains("france") -> "法国"
+            text.contains("德国") || text.contains("germany") -> "德国"
+            text.contains("澳大利亚") || text.contains("australia") -> "澳大利亚"
+            text.contains("加拿大") || text.contains("canada") -> "加拿大"
+            text.contains("泰国") || text.contains("thailand") -> "泰国"
+            text.contains("新加坡") || text.contains("singapore") -> "新加坡"
             text.contains("香港") -> "中国"
             text.contains("澳门") -> "中国"
+            text.contains("台湾") -> "中国"
             else -> "未分类"
         }
     }
@@ -211,6 +267,36 @@ class FootprintViewModel : ViewModel() {
             "青岛市" to "山东省",
             "厦门市" to "福建省",
             "长沙市" to "湖南省"
+        )
+
+        /** Maps lowercase English country name variants to display name. */
+        private val COUNTRY_NAME_MAP = mapOf(
+            "china" to "中国", "prc" to "中国", "people's republic of china" to "中国",
+            "japan" to "日本",
+            "usa" to "美国", "united states" to "美国", "united states of america" to "美国", "us" to "美国",
+            "south korea" to "韩国", "korea" to "韩国",
+            "uk" to "英国", "united kingdom" to "英国", "great britain" to "英国",
+            "france" to "法国",
+            "germany" to "德国",
+            "australia" to "澳大利亚",
+            "canada" to "加拿大",
+            "thailand" to "泰国",
+            "singapore" to "新加坡",
+            "malaysia" to "马来西亚",
+            "indonesia" to "印度尼西亚",
+            "vietnam" to "越南",
+            "india" to "印度",
+            "russia" to "俄罗斯",
+            "italy" to "意大利",
+            "spain" to "西班牙",
+            "portugal" to "葡萄牙",
+            "netherlands" to "荷兰",
+            "new zealand" to "新西兰",
+            "brazil" to "巴西",
+            "mexico" to "墨西哥",
+            "hong kong" to "中国",
+            "macau" to "中国", "macao" to "中国",
+            "taiwan" to "中国台湾"
         )
     }
 }
