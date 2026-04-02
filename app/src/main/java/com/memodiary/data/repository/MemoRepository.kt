@@ -30,8 +30,23 @@ class MemoRepository(private val memoDao: MemoDao) {
     suspend fun deleteMemo(id: Long) =
         memoDao.deleteMemoById(id)
 
+    fun getMemosWithLocation(): Flow<List<Memo>> =
+        memoDao.getMemosWithLocation().map { list -> list.map { it.toDomain() } }
+
+    fun getMemosByCity(city: String): Flow<List<Memo>> =
+        memoDao.getMemosByCity(city).map { list -> list.map { it.toDomain() } }
+
+    fun searchMemosWithLocation(query: String): Flow<List<Memo>> =
+        memoDao.searchMemosWithLocation(query).map { list -> list.map { it.toDomain() } }
+
     // --------------- Mapping helpers ---------------
 
-    private fun MemoEntity.toDomain() = Memo(id, title, content, createdAt, updatedAt)
-    private fun Memo.toEntity() = MemoEntity(id, title, content, createdAt, updatedAt)
+    private fun MemoEntity.toDomain() = Memo(
+        id, title, content, createdAt, updatedAt,
+        latitude, longitude, country, province, city, address
+    )
+    private fun Memo.toEntity() = MemoEntity(
+        id, title, content, createdAt, updatedAt,
+        latitude, longitude, country, province, city, address
+    )
 }

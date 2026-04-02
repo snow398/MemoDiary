@@ -1,13 +1,19 @@
 package com.memodiary.ui.screen.edit
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
@@ -15,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.memodiary.di.AppModule
 
 /**
  * Create / edit screen for a memo.
@@ -34,9 +41,33 @@ fun MemoEditScreen(
     val title by viewModel.title.collectAsState()
     val content by viewModel.content.collectAsState()
     val isSaving by viewModel.isSaving.collectAsState()
+    val locationInfo by viewModel.locationInfo.collectAsState()
+    val isLocating by viewModel.isLocating.collectAsState()
+    val manualAddress by viewModel.manualAddress.collectAsState()
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions.values.any { it }
+        if (granted) viewModel.fetchLocation()
+    }
 
     LaunchedEffect(memoId) {
-        if (memoId != null) viewModel.loadMemo(memoId)
+        if (memoId != null) {
+            viewModel.loadMemo(memoId)
+        } else {
+            // Auto-fetch location for new memos
+            if (AppModule.locationRepository.hasLocationPermission()) {
+                viewModel.fetchLocation()
+            } else {
+                permissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
+            }
+        }
     }
 
     val titleColor = MaterialTheme.colorScheme.onBackground
@@ -134,6 +165,122 @@ fun MemoEditScreen(
                     innerTextField()
                 }
             )
+
+            // ── Location section ─────────────────────────────────────────
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "位置信息",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (isLocating) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("正在获取位置...", style = MaterialTheme.typography.bodySmall)
+                }
+            } else if (locationInfo != null) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = locationInfo?.address ?: "${locationInfo?.city}, ${locationInfo?.province}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row {
+                    OutlinedButton(
+                        onClick = {
+                            if (AppModule.locationRepository.hasLocationPermission()) {
+                                viewModel.fetchLocation()
+                            } else {
+                                permissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                )
+                            }
+                        },
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("重新定位", style = MaterialTheme.typography.labelMedium)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    OutlinedButton(
+                        onClick = { viewModel.clearLocation() },
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Text("清除位置", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            } else {
+                // No location — show manual input
+                OutlinedTextField(
+                    value = manualAddress,
+                    onValueChange = viewModel::onManualAddressChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("输入地址（如：东京新宿区）") },
+                    singleLine = true,
+                    leadingIcon = {
+                        Icon(Icons.Default.LocationOn, contentDescription = null)
+                    }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row {
+                    OutlinedButton(
+                        onClick = { viewModel.resolveManualAddress() },
+                        enabled = manualAddress.isNotBlank(),
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Text("解析地址", style = MaterialTheme.typography.labelMedium)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            if (AppModule.locationRepository.hasLocationPermission()) {
+                                viewModel.fetchLocation()
+                            } else {
+                                permissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                )
+                            }
+                        },
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("自动定位", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
