@@ -1,0 +1,5 @@
+<resources>
+    <backup-rule>
+        <include>notes/*</include>
+    </backup-rule>
+</resources>

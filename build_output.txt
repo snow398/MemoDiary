@@ -1,0 +1,22 @@
+Initialized native services in: C:\Users\Jiangping_Xu\.gradle\native
+Initialized jansi services in: C:\Users\Jiangping_Xu\.gradle\native
+Removing 0 daemon stop events from registry
+Starting a Gradle Daemon, 4 busy Daemons could not be reused, use --status for details
+Starting process 'Gradle build daemon'. Working directory: C:\Users\Jiangping_Xu\.gradle\daemon\9.0.0 Command: D:\Android Studio\jbr\bin\java.exe --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED -Xmx1536m -Dfile.encoding=UTF-8 -Duser.country=US -Duser.language=en -Duser.variant -cp C:\Users\Jiangping_Xu\.gradle\wrapper\dists\gradle-9.0.0-bin\d6wjpkvcgsg3oed0qlfss3wgl\gradle-9.0.0\lib\gradle-daemon-main-9.0.0.jar -javaagent:C:\Users\Jiangping_Xu\.gradle\wrapper\dists\gradle-9.0.0-bin\d6wjpkvcgsg3oed0qlfss3wgl\gradle-9.0.0\lib\agents\gradle-instrumentation-agent-9.0.0.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 9.0.0
+Successfully started process 'Gradle build daemon'
+An attempt to start the daemon took 5.237 secs.
+The client will now receive all logging from the daemon (pid: 19356). The daemon log file: C:\Users\Jiangping_Xu\.gradle\daemon\9.0.0\daemon-19356.out.log
+Starting build in new daemon [memory: 1.5 GiB]
+Using 4 worker leases.
+Configuration on demand is an incubating feature.
+Received JVM installation metadata from 'D:\Android Studio\jbr': {JAVA_HOME=D:\Android Studio\jbr, JAVA_VERSION=21.0.9, JAVA_VENDOR=JetBrains s.r.o., RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.9+-14787801-b1163.94, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.9+-14787801-b1163.94, VM_VENDOR=JetBrains s.r.o., OS_ARCH=amd64}
+Watching the file system is configured to be enabled if available
+Now considering [D:\code\memodiary\MemoDiary] as hierarchies to watch
+File system watching is active
+Starting Build
+Settings evaluated using settings file 'D:\code\memodiary\MemoDiary\settings.gradle.kts'.
+Projects loaded. Root project using build file 'D:\code\memodiary\MemoDiary\build.gradle.kts'.
+Included projects: [root project 'MemoDiary', project ':app']
+
+> Configure project :
+Evaluating root project 'MemoDiary' using build file 'D:\code\memodiary\MemoDiary\build.gradle.kts'.

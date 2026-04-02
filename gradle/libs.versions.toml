@@ -1,0 +1,13 @@
+[versions]
+kotlin = "1.7.10"
+androidx_core = "1.10.0"
+androidx_appcompat = "1.6.1"
+androidx_constraintlayout = "2.1.4"
+androidx_room = "2.5.0"
+androidx_navigation = "2.5.3"
+androidx_lifecycle = "2.6.1"
+androidx_compose_ui = "1.4.0"
+androidx_compose_material = "1.4.0"
+androidx_compose_activity = "1.6.1"
+hilt = "2.44"
+hilt_navigation = "1.0.0"

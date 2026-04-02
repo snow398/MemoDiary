@@ -1,0 +1,7 @@
+<resources>
+    <!-- Minimal theme for the Activity shell. All real theming is done in Compose via MemoDiaryTheme. -->
+    <style name="Theme.MemoDiary" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@android:color/white</item>
+    </style>
+</resources>

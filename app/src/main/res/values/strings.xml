@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">MemoDiary</string>
+    <string name="welcome_message">Welcome to MemoDiary!</string>
+    <string name="add_memo">Add Memo</string>
+    <string name="edit_memo">Edit Memo</string>
+    <string name="delete_memo">Delete Memo</string>
+    <string name="memo_title_hint">Enter memo title</string>
+    <string name="memo_content_hint">Enter memo content</string>
+    <string name="no_memos">No memos available</string>
+    <string name="created_at">Created at: %1$s</string>
+    <string name="updated_at">Updated at: %1$s</string>
+</resources>

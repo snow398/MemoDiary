@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^\\$env:JAVA_HOME = \\[Environment\\]::GetEnvironmentVariable\\(\"JAVA_HOME\", \"User\"\\); Set-Location d:\\\\code\\\\memodiary\\\\MemoDiary; & \\.\\\\gradlew\\.bat -v$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
