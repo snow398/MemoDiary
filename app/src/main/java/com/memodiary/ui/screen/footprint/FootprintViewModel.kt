@@ -49,13 +49,22 @@ class FootprintViewModel : ViewModel() {
         _searchQuery.value = query
     }
 
+    fun loadGroupedNotesByLocation(): StateFlow<Map<String, Map<String, List<CityInfo>>>> =
+        groupedFootprints
+
+    fun getNotesByCity(city: String): Flow<List<Memo>> =
+        repository.getMemosByCity(city)
+
     private fun groupByLocation(memos: List<Memo>): Map<String, Map<String, List<CityInfo>>> {
-        // Group memos by (country, province, city), build CityInfo for each group
-        val cityGroups = memos.groupBy { Triple(
-            it.country ?: "未知国家",
-            it.province ?: "未知省份",
-            it.city ?: "未知城市"
-        ) }
+        // Group by structured location first, then fall back to parsing free-form address text.
+        val cityGroups = memos.groupBy {
+            val parsed = parseAddressFallback(it.address)
+            Triple(
+                it.country ?: parsed.first,
+                it.province ?: parsed.second,
+                it.city ?: parsed.third
+            )
+        }
 
         val cityInfos = cityGroups.map { (key, notes) ->
             CityInfo(
@@ -77,5 +86,33 @@ class FootprintViewModel : ViewModel() {
 
         @Suppress("UNCHECKED_CAST")
         return result as Map<String, Map<String, List<CityInfo>>>
+    }
+
+    private fun parseAddressFallback(address: String?): Triple<String, String, String> {
+        if (address.isNullOrBlank()) return Triple("未分类", "未分类", "未分类")
+
+        val text = address.replace(" ", "")
+
+        fun extractBySuffix(vararg suffixes: String): String? {
+            for (suffix in suffixes) {
+                val idx = text.indexOf(suffix)
+                if (idx > 0) {
+                    val start = (idx - 8).coerceAtLeast(0)
+                    return text.substring(start, idx + 1)
+                }
+            }
+            return null
+        }
+
+        val country = when {
+            text.contains("中国") -> "中国"
+            text.contains("日本") -> "日本"
+            text.contains("美国") -> "美国"
+            else -> "未分类"
+        }
+
+        val province = extractBySuffix("省", "市", "自治区") ?: "未分类"
+        val city = extractBySuffix("市", "区", "县") ?: "未分类"
+        return Triple(country, province, city)
     }
 }

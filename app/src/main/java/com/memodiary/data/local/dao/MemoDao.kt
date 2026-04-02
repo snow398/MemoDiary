@@ -32,15 +32,15 @@ interface MemoDao {
     @Query("SELECT * FROM notes WHERE id = :id LIMIT 1")
     suspend fun getMemoById(id: Long): MemoEntity?
 
-    /** All memos that have location data, newest first. */
-    @Query("SELECT * FROM notes WHERE city IS NOT NULL ORDER BY createdAt DESC")
+    /** All memos that have any address/location data, newest first. */
+    @Query("SELECT * FROM notes WHERE city IS NOT NULL OR province IS NOT NULL OR country IS NOT NULL OR address IS NOT NULL ORDER BY createdAt DESC")
     fun getMemosWithLocation(): Flow<List<MemoEntity>>
 
     /** Memos for a specific city, newest first. */
     @Query("SELECT * FROM notes WHERE city = :city ORDER BY createdAt DESC")
     fun getMemosByCity(city: String): Flow<List<MemoEntity>>
 
-    /** Search memos that have location, by city/province/country/address. */
-    @Query("SELECT * FROM notes WHERE city IS NOT NULL AND (city LIKE '%' || :query || '%' OR province LIKE '%' || :query || '%' OR country LIKE '%' || :query || '%' OR address LIKE '%' || :query || '%') ORDER BY createdAt DESC")
+    /** Search memos that have address/location fields, by city/province/country/address. */
+    @Query("SELECT * FROM notes WHERE (city IS NOT NULL OR province IS NOT NULL OR country IS NOT NULL OR address IS NOT NULL) AND (city LIKE '%' || :query || '%' OR province LIKE '%' || :query || '%' OR country LIKE '%' || :query || '%' OR address LIKE '%' || :query || '%') ORDER BY createdAt DESC")
     fun searchMemosWithLocation(query: String): Flow<List<MemoEntity>>
 }

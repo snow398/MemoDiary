@@ -93,7 +93,7 @@ fun FootprintListScreen(
                     )
                     if (searchQuery.isEmpty()) {
                         Text(
-                            text = "创建笔记时开启定位即可记录足迹",
+                            text = "根据笔记中的地址信息自动分类展示",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
