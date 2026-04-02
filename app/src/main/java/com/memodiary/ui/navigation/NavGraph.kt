@@ -2,6 +2,7 @@ package com.memodiary.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
@@ -12,22 +13,27 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.memodiary.ui.screen.calendar.CalendarDayScreen
+import com.memodiary.ui.screen.calendar.CalendarScreen
 import com.memodiary.ui.screen.detail.MemoDetailScreen
 import com.memodiary.ui.screen.edit.MemoEditScreen
 import com.memodiary.ui.screen.footprint.FootprintDetailScreen
 import com.memodiary.ui.screen.footprint.FootprintListScreen
 import com.memodiary.ui.screen.timeline.TimelineScreen
 
-private const val ROUTE_TIMELINE = "timeline"
-private const val ROUTE_FOOTPRINT = "footprintList"
-private const val ROUTE_FOOTPRINT_DETAIL = "footprintDetail/{city}"
-private const val ROUTE_DETAIL = "memoDetail/{memoId}"
-private const val ROUTE_EDIT = "memoEdit/{memoId}"
+private const val ROUTE_TIMELINE          = "timeline"
+private const val ROUTE_CALENDAR          = "calendar"
+private const val ROUTE_CALENDAR_DAY      = "calendarDay/{dateMs}"
+private const val ROUTE_FOOTPRINT         = "footprintList"
+private const val ROUTE_FOOTPRINT_DETAIL  = "footprintDetail/{city}"
+private const val ROUTE_DETAIL            = "memoDetail/{memoId}"
+private const val ROUTE_EDIT              = "memoEdit/{memoId}"
 
 private data class TabItem(val label: String, val icon: ImageVector, val route: String)
 
 private val tabs = listOf(
     TabItem("笔记", Icons.Default.Edit, ROUTE_TIMELINE),
+    TabItem("日历", Icons.Default.CalendarToday, ROUTE_CALENDAR),
     TabItem("足迹", Icons.Default.LocationOn, ROUTE_FOOTPRINT)
 )
 
@@ -38,7 +44,7 @@ fun NavGraph() {
     val currentRoute = navBackStackEntry?.destination?.route
 
     // Show bottom bar only on top-level tab screens
-    val showBottomBar = currentRoute in listOf(ROUTE_TIMELINE, ROUTE_FOOTPRINT)
+    val showBottomBar = currentRoute in listOf(ROUTE_TIMELINE, ROUTE_CALENDAR, ROUTE_FOOTPRINT)
 
     Scaffold(
         bottomBar = {
@@ -77,6 +83,23 @@ fun NavGraph() {
                     onAddMemo = {
                         navController.navigate("memoEdit/new")
                     }
+                )
+            }
+
+            composable(ROUTE_CALENDAR) {
+                CalendarScreen(
+                    onDayClick = { dateMs -> navController.navigate("calendarDay/$dateMs") },
+                    onAddMemo  = { navController.navigate("memoEdit/new") }
+                )
+            }
+
+            composable(ROUTE_CALENDAR_DAY) { back ->
+                val dateMs = back.arguments?.getString("dateMs")?.toLongOrNull() ?: return@composable
+                CalendarDayScreen(
+                    dayStartMs  = dateMs,
+                    onBack      = { navController.popBackStack() },
+                    onMemoClick = { id -> navController.navigate("memoDetail/$id") },
+                    onAddMemo   = { navController.navigate("memoEdit/new") }
                 )
             }
 

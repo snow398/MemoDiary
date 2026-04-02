@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- app internal files: memo_images/ -->
+    <files-path name="memo_images" path="memo_images/" />
+    <!-- camera temp files -->
+    <cache-path name="camera_photos" path="camera_photos/" />
+</paths>

@@ -3,6 +3,7 @@ package com.memodiary.data.repository
 import com.memodiary.data.local.dao.MemoDao
 import com.memodiary.data.local.entity.MemoEntity
 import com.memodiary.domain.model.Memo
+import com.memodiary.domain.model.MoodType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -39,14 +40,21 @@ class MemoRepository(private val memoDao: MemoDao) {
     fun searchMemosWithLocation(query: String): Flow<List<Memo>> =
         memoDao.searchMemosWithLocation(query).map { list -> list.map { it.toDomain() } }
 
+    fun getMemosByDateRange(startMs: Long, endMs: Long): Flow<List<Memo>> =
+        memoDao.getMemosByDateRange(startMs, endMs).map { list -> list.map { it.toDomain() } }
+
     // --------------- Mapping helpers ---------------
 
     private fun MemoEntity.toDomain() = Memo(
         id, title, content, createdAt, updatedAt,
-        latitude, longitude, country, province, city, address
+        latitude, longitude, country, province, city, address,
+        mood = try { MoodType.valueOf(mood ?: "NONE") } catch (_: Exception) { MoodType.NONE },
+        imagePaths = imagePaths?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
     )
     private fun Memo.toEntity() = MemoEntity(
         id, title, content, createdAt, updatedAt,
-        latitude, longitude, country, province, city, address
+        latitude, longitude, country, province, city, address,
+        mood = if (mood == MoodType.NONE) null else mood.name,
+        imagePaths = imagePaths.joinToString(",").ifBlank { null }
     )
 }

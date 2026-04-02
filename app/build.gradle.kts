@@ -46,6 +46,7 @@ android {
         resources {
             excludes += "/META-INF/NOTICE"
             excludes += "/META-INF/LICENSE"
+            excludes += "/META-INF/DEPENDENCIES"
         }
     }
 }
@@ -73,6 +74,9 @@ dependencies {
 
     // Location
     implementation("com.google.android.gms:play-services-location:21.1.0")
+
+    // Coil — image loading in Compose
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     // Room
     implementation("androidx.room:room-runtime:2.6.1")

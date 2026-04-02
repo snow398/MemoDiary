@@ -32,6 +32,10 @@ interface MemoDao {
     @Query("SELECT * FROM notes WHERE id = :id LIMIT 1")
     suspend fun getMemoById(id: Long): MemoEntity?
 
+    /** Memos whose createdAt falls in [startMs, endMs), newest first. Used by CalendarViewModel. */
+    @Query("SELECT * FROM notes WHERE createdAt >= :startMs AND createdAt < :endMs ORDER BY createdAt DESC")
+    fun getMemosByDateRange(startMs: Long, endMs: Long): Flow<List<MemoEntity>>
+
     /** All memos that have any address/location data, newest first. */
     @Query("SELECT * FROM notes WHERE city IS NOT NULL OR province IS NOT NULL OR country IS NOT NULL OR address IS NOT NULL ORDER BY createdAt DESC")
     fun getMemosWithLocation(): Flow<List<MemoEntity>>
