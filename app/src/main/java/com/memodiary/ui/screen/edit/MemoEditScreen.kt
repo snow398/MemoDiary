@@ -259,7 +259,12 @@ fun MemoEditScreen(
                     Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(locationInfo?.address ?: "${locationInfo?.city}, ${locationInfo?.province}",
+                        val displayAddr = locationInfo?.let { info ->
+                            info.address
+                                ?: listOfNotNull(info.city, info.province).joinToString(", ").ifBlank { null }
+                                ?: "%.5f, %.5f".format(info.latitude, info.longitude)
+                        } ?: ""
+                        Text(displayAddr,
                             style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                     }
                 }

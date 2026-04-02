@@ -118,7 +118,9 @@ fun MemoDetailScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = m.address ?: "${m.city}, ${m.province}",
+                            text = m.address
+                                ?: listOfNotNull(m.city, m.province).joinToString(", ").ifBlank { null }
+                                ?: "%.5f, %.5f".format(m.latitude ?: 0.0, m.longitude ?: 0.0),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
