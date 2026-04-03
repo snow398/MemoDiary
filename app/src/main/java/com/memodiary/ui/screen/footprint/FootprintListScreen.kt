@@ -130,7 +130,9 @@ fun FootprintListScreen(
                         items(cities, key = { "city_${it.country}_${it.province}_${it.city}" }) { cityInfo ->
                             ListItem(
                                 modifier = Modifier
-                                    .clickable { onCityClick(cityInfo.city) }
+                                    // Pass full "country::province::city" key so DetailScreen can
+                                    // correctly filter even when DB city column is NULL (manual address)
+                                    .clickable { onCityClick("${cityInfo.country}::${cityInfo.province}::${cityInfo.city}") }
                                     .padding(start = 16.dp),
                                 headlineContent = {
                                     Text(cityInfo.city)

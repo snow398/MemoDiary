@@ -53,8 +53,21 @@ class FootprintViewModel : ViewModel() {
     fun loadGroupedNotesByLocation(): StateFlow<Map<String, Map<String, List<CityInfo>>>> =
         groupedFootprints
 
-    fun getNotesByCity(city: String): Flow<List<Memo>> =
-        repository.getMemosByCity(city)
+    /**
+     * Returns memos that belong to the given (country, province, city) triplet.
+     * Uses the same in-memory parsing logic as [groupByLocation], so manual-address
+     * memos (where the DB city column is NULL) are correctly included.
+     */
+    fun getMemosForCityKey(country: String, province: String, city: String): Flow<List<Memo>> =
+        repository.getMemosWithLocation().map { memos ->
+            memos.filter { memo ->
+                val fallback = parseAddressFallback(memo.address)
+                val memoCountry  = memo.country?.ifBlank { null }  ?: fallback.first
+                val memoProvince = memo.province?.ifBlank { null } ?: fallback.second
+                val memoCity     = memo.city?.ifBlank { null }     ?: fallback.third
+                memoCountry == country && memoProvince == province && memoCity == city
+            }
+        }
 
     private data class ParsedAddress(
         val country: String,
@@ -68,9 +81,9 @@ class FootprintViewModel : ViewModel() {
         val cityGroups = memos.groupBy {
             val parsed = parseAddressFallback(it.address)
             Triple(
-                it.country ?: parsed.first,
-                it.province ?: parsed.second,
-                it.city ?: parsed.third
+                it.country?.ifBlank { null }  ?: parsed.first,
+                it.province?.ifBlank { null } ?: parsed.second,
+                it.city?.ifBlank { null }     ?: parsed.third
             )
         }
 

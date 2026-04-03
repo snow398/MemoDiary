@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.memodiary.di.AppModule
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.memodiary.domain.model.Memo
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -28,16 +28,25 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FootprintDetailScreen(
-    city: String,
+    cityKey: String,   // format: "country::province::city"
     onBack: () -> Unit,
-    onMemoClick: (Long) -> Unit
+    onMemoClick: (Long) -> Unit,
+    viewModel: FootprintViewModel = viewModel()
 ) {
-    val memos by AppModule.repository.getMemosByCity(city).collectAsState(initial = emptyList())
+    // Parse the composite key
+    val parts = cityKey.split("::")
+    val country  = parts.getOrNull(0) ?: ""
+    val province = parts.getOrNull(1) ?: ""
+    val city     = parts.getOrNull(2) ?: cityKey   // fallback: treat whole key as city name
+
+    // Use in-memory filtering — matches both GPS-resolved and manual-address memos
+    val memos by viewModel.getMemosForCityKey(country, province, city)
+        .collectAsState(initial = emptyList())
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(city) },
+                title = { Text(city.ifBlank { cityKey }) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "返回")

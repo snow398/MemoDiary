@@ -112,9 +112,9 @@ fun NavGraph() {
             }
 
             composable(ROUTE_FOOTPRINT_DETAIL) { backStackEntry ->
-                val city = backStackEntry.arguments?.getString("city") ?: return@composable
+                val cityKey = backStackEntry.arguments?.getString("city") ?: return@composable
                 FootprintDetailScreen(
-                    city = city,
+                    cityKey = cityKey,
                     onBack = { navController.popBackStack() },
                     onMemoClick = { memoId ->
                         navController.navigate("memoDetail/$memoId")
