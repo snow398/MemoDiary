@@ -4,6 +4,8 @@ import android.Manifest
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -34,6 +36,7 @@ import coil.compose.AsyncImage
 import com.memodiary.data.image.ImageStorage
 import com.memodiary.di.AppModule
 import com.memodiary.domain.model.MoodType
+import com.memodiary.domain.model.NoteColor
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,7 +57,11 @@ fun MemoEditScreen(
     val isLocating   by viewModel.isLocating.collectAsState()
     val manualAddress by viewModel.manualAddress.collectAsState()
     val mood         by viewModel.mood.collectAsState()
+    val noteColor    by viewModel.noteColor.collectAsState()
     val imagePaths   by viewModel.imagePaths.collectAsState()
+
+    // Full-screen image viewer state
+    var fullscreenImagePath by remember { mutableStateOf<String?>(null) }
 
     // ── Camera setup ─────────────────────────────────────────────────────
     var cameraFileRef by remember { mutableStateOf<File?>(null) }
@@ -190,6 +197,29 @@ fun MemoEditScreen(
                 }
             }
 
+            // ── Color section ─────────────────────────────────────────────
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+            Spacer(modifier = Modifier.height(12.dp))
+            Text("背景颜色", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NoteColor.entries.forEach { c ->
+                    val selected = noteColor == c
+                    FilterChip(
+                        selected = selected,
+                        onClick = { viewModel.onNoteColorChange(c) },
+                        label = { Text(c.label, style = MaterialTheme.typography.labelMedium) },
+                        colors = if (c != NoteColor.NONE) FilterChipDefaults.filterChipColors(
+                            containerColor = c.color,
+                            selectedContainerColor = c.color,
+                            labelColor = c.onColor,
+                            selectedLabelColor = c.onColor
+                        ) else FilterChipDefaults.filterChipColors()
+                    )
+                }
+            }
+
             // ── Image section ─────────────────────────────────────────────
             Spacer(modifier = Modifier.height(12.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
@@ -214,6 +244,7 @@ fun MemoEditScreen(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .clip(RoundedCornerShape(8.dp))
+                                    .clickable { fullscreenImagePath = path }
                             )
                             IconButton(
                                 onClick = { viewModel.removeImage(path) },
@@ -337,4 +368,36 @@ fun MemoEditScreen(
         }
     }
 
+    // ── Fullscreen image overlay ──────────────────────────────────────────
+    fullscreenImagePath?.let { path ->
+        FullscreenImageViewer(path = path, onDismiss = { fullscreenImagePath = null })
+    }
+}
+
+@Composable
+fun FullscreenImageViewer(path: String, onDismiss: () -> Unit) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.92f))
+                .clickable(onClick = onDismiss),
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = File(path),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+            )
+        }
+    }
 }

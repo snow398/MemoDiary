@@ -21,5 +21,6 @@ data class MemoEntity(
     val city: String? = null,
     val address: String? = null,
     val mood: String? = null,          // MoodType.name
-    val imagePaths: String? = null     // comma-separated absolute file paths
+    val imagePaths: String? = null,    // comma-separated absolute file paths
+    val noteColor: String? = null      // NoteColor.name
 )

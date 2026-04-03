@@ -4,6 +4,7 @@ import com.memodiary.data.local.dao.MemoDao
 import com.memodiary.data.local.entity.MemoEntity
 import com.memodiary.domain.model.Memo
 import com.memodiary.domain.model.MoodType
+import com.memodiary.domain.model.NoteColor
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -49,12 +50,14 @@ class MemoRepository(private val memoDao: MemoDao) {
         id, title, content, createdAt, updatedAt,
         latitude, longitude, country, province, city, address,
         mood = try { MoodType.valueOf(mood ?: "NONE") } catch (_: Exception) { MoodType.NONE },
-        imagePaths = imagePaths?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+        imagePaths = imagePaths?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+        noteColor = try { NoteColor.valueOf(noteColor ?: "NONE") } catch (_: Exception) { NoteColor.NONE }
     )
     private fun Memo.toEntity() = MemoEntity(
         id, title, content, createdAt, updatedAt,
         latitude, longitude, country, province, city, address,
         mood = if (mood == MoodType.NONE) null else mood.name,
-        imagePaths = imagePaths.joinToString(",").ifBlank { null }
+        imagePaths = imagePaths.joinToString(",").ifBlank { null },
+        noteColor = if (noteColor == NoteColor.NONE) null else noteColor.name
     )
 }

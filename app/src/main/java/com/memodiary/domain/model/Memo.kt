@@ -1,6 +1,7 @@
 package com.memodiary.domain.model
 
 import com.memodiary.domain.model.MoodType
+import com.memodiary.domain.model.NoteColor
 
 /**
  * Domain model for a single memo.
@@ -19,5 +20,6 @@ data class Memo(
     val city: String? = null,
     val address: String? = null,
     val mood: MoodType = MoodType.NONE,
-    val imagePaths: List<String> = emptyList()
+    val imagePaths: List<String> = emptyList(),
+    val noteColor: NoteColor = NoteColor.NONE
 )

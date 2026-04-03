@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.memodiary.domain.model.MoodType
+import com.memodiary.domain.model.NoteColor
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -44,10 +45,14 @@ fun MemoDetailScreen(
     viewModel: MemoDetailViewModel = viewModel()
 ) {
     val memo by viewModel.memo.collectAsState()
+    var fullscreenImagePath by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(memoId) {
         viewModel.loadMemo(memoId)
     }
+
+    val bgColor = memo?.noteColor?.let { if (it != NoteColor.NONE) it.color else null }
+        ?: MaterialTheme.colorScheme.background
 
     Scaffold(
         topBar = {
@@ -63,12 +68,10 @@ fun MemoDetailScreen(
                         Icon(Icons.Default.Edit, contentDescription = "编辑")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = bgColor)
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = bgColor
     ) { paddingValues ->
         memo?.let { m ->
             val context = LocalContext.current
@@ -170,6 +173,7 @@ fun MemoDetailScreen(
                                 modifier = Modifier
                                     .aspectRatio(1f)
                                     .clip(RoundedCornerShape(6.dp))
+                                    .clickable { fullscreenImagePath = path }
                             )
                         }
                     }
@@ -183,6 +187,14 @@ fun MemoDetailScreen(
         ) {
             CircularProgressIndicator()
         }
+    }
+
+    // ── Fullscreen image overlay ──────────────────────────────────────────
+    fullscreenImagePath?.let { path ->
+        com.memodiary.ui.screen.edit.FullscreenImageViewer(
+            path = path,
+            onDismiss = { fullscreenImagePath = null }
+        )
     }
 }
 

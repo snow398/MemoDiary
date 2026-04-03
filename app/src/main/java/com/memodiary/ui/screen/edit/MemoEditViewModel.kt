@@ -9,6 +9,7 @@ import com.memodiary.data.location.LocationInfo
 import com.memodiary.di.AppModule
 import com.memodiary.domain.model.Memo
 import com.memodiary.domain.model.MoodType
+import com.memodiary.domain.model.NoteColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,6 +47,9 @@ class MemoEditViewModel : ViewModel() {
     private val _mood = MutableStateFlow(MoodType.NONE)
     val mood: StateFlow<MoodType> = _mood
 
+    private val _noteColor = MutableStateFlow(NoteColor.NONE)
+    val noteColor: StateFlow<NoteColor> = _noteColor
+
     private val _imagePaths = MutableStateFlow<List<String>>(emptyList())
     val imagePaths: StateFlow<List<String>> = _imagePaths
 
@@ -56,6 +60,7 @@ class MemoEditViewModel : ViewModel() {
             _title.value = memo?.title ?: ""
             _content.value = memo?.content ?: ""
             _mood.value = memo?.mood ?: MoodType.NONE
+            _noteColor.value = memo?.noteColor ?: NoteColor.NONE
             _imagePaths.value = memo?.imagePaths ?: emptyList()
             if (memo?.latitude != null && memo.longitude != null) {
                 _locationInfo.value = LocationInfo(
@@ -79,6 +84,7 @@ class MemoEditViewModel : ViewModel() {
     fun onContentChange(value: String) { _content.value = value }
     fun onManualAddressChange(value: String) { _manualAddress.value = value }
     fun onMoodChange(mood: MoodType) { _mood.value = mood }
+    fun onNoteColorChange(color: NoteColor) { _noteColor.value = color }
 
     /** Copy a gallery/camera URI into app storage and append to image list. */
     fun addImageFromUri(context: Context, uri: Uri) {
@@ -174,7 +180,8 @@ class MemoEditViewModel : ViewModel() {
                 city = resolvedLoc?.city,
                 address = resolvedLoc?.address,
                 mood = _mood.value,
-                imagePaths = _imagePaths.value
+                imagePaths = _imagePaths.value,
+                noteColor = _noteColor.value
             )
             if (existing == null) repository.insertMemo(base)
             else repository.updateMemo(base)

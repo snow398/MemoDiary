@@ -9,7 +9,7 @@ import com.memodiary.data.local.dao.MemoDao
 import com.memodiary.data.local.entity.MemoEntity
 import android.content.Context
 
-@Database(entities = [MemoEntity::class], version = 3, exportSchema = false)
+@Database(entities = [MemoEntity::class], version = 4, exportSchema = false)
 abstract class MemoDiaryDatabase : RoomDatabase() {
 
     abstract fun memoDao(): MemoDao
@@ -36,6 +36,12 @@ abstract class MemoDiaryDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE notes ADD COLUMN noteColor TEXT")
+            }
+        }
+
         fun getDatabase(context: Context): MemoDiaryDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -43,7 +49,7 @@ abstract class MemoDiaryDatabase : RoomDatabase() {
                     MemoDiaryDatabase::class.java,
                     "memo_diary_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                 INSTANCE = instance
                 instance
